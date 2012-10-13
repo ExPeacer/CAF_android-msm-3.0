@@ -491,6 +491,113 @@ config MACH_MSM7625A_SURF
         help
           Support for the Qualcomm MSM7625A SURF.
 
+config MACH_SEMC_MOGAMI
+       depends on ARCH_MSM7X30
+       depends on !MSM_STACKED_MEMORY
+       select TI1271
+       default y
+       bool "SonyEricsson Mogami CDB"
+       help
+         Support for the SonyEricsson Mogami CDB (development board).
+
+config MACH_SEMC_ANZU
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select TI1271
+	select SUPPORT_ALIEN_USB_CHARGER
+	default y
+	bool "SonyEricsson Anzu"
+	help
+	  Support for the SonyEricsson Anzu devices.
+
+config MACH_SEMC_HALLON
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select TI1271
+	select SUPPORT_ALIEN_USB_CHARGER
+	default y
+	bool "SonyEricsson Hallon"
+	help
+	  Support for the SonyEricsson Hallon devices.
+
+config MACH_SEMC_IYOKAN
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select TI1271
+	select SUPPORT_ALIEN_USB_CHARGER
+	default y
+	bool "SonyEricsson Iyokan"
+	help
+	  Support for the SonyEricsson Iyokan devices.
+
+config MACH_SEMC_URUSHI
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select TI1271
+	select SUPPORT_ALIEN_USB_CHARGER
+	default y
+	bool "SonyEricsson Urushi"
+	help
+	  Support for the SonyEricsson Urushi devices.
+
+config MACH_SEMC_SMULTRON
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select TI1271
+	select SUPPORT_ALIEN_USB_CHARGER
+	default y
+	bool "SonyEricsson Smultron"
+	help
+	  Support for the SonyEricsson Smultron devices.
+
+config MACH_SEMC_SATSUMA
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select TI1271 if !CAPTURE_KERNEL
+	select SUPPORT_ALIEN_USB_CHARGER
+	default y
+	bool "SonyEricsson Satsuma"
+	help
+	  Support for the SonyEricsson Satsuma devices.
+
+config MACH_SEMC_MANGO
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select TI1271
+	default n
+	bool "SonyEricsson Mango"
+	help
+	  Support for the SonyEricsson Mango devices.
+
+config MACH_SEMC_COCONUT
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select TI1271
+	default n
+	bool "SonyEricsson Coconut"
+	help
+	  Support for the SonyEricsson Coconut devices.
+
+config MACH_SEMC_HAIDA
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select TI1271
+	select SUPPORT_ALIEN_USB_CHARGER
+	default y
+	bool "SonyEricsson Haida"
+	help
+	  Support for the SonyEricsson Haida devices.
+
+config MACH_SEMC_PHOENIX
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select SUPPORT_ALIEN_USB_CHARGER
+	select USE_PMIC_CHARGING_ON_AMSS
+	default n
+	bool "SonyEricsson Phoenix"
+	help
+	  Support for the SonyEricsson phoenix devices.
+
 config MACH_MSM7625A_FFA
         depends on ARCH_MSM7X27A
         depends on !MSM_STACKED_MEMORY
@@ -935,6 +1042,14 @@ choice
 	config MSM_AMSS_VERSION_6225
 		bool "6.2.20 + New ADSP"
 endchoice
+
+config TI1271
+	bool "Use connectivity driver and config for TI1271"
+	default n
+	select WIRELESS_EXT
+	select WEXT_PRIV
+	help
+	  This option enables support for TI1271 Wilink driver.
 
 config MSM_HAS_DEBUG_UART_HS
 	bool
@@ -1384,6 +1499,20 @@ config MSM_SMD_PKT
 
 	  If in doubt, say yes.
 
+config MSM_SDIO_CTL
+	bool "SDIO CTL Driver"
+	depends on MSM_SDIO_AL
+	default y
+	help
+	  Provides a binay SDIO muxed control port interface.
+
+config MSM_SDIO_CTL_DEBUG
+	bool "SDIO CTL DEBUG Enable"
+	depends on MSM_SDIO_CTL
+	default y
+	help
+	  Support for debugging the SDIO Control Driver
+
 config MSM_SDIO_CMUX
 	bool "SDIO CMUX Driver"
 	depends on MSM_SDIO_AL
@@ -1724,6 +1853,26 @@ config SURF_FFA_GPIO_KEYPAD
 	default y
 	help
 	  Select if the GPIO keypad is attached.
+
+config MOGAMI_SLIDER
+	bool "Mogami slider"
+	depends on INPUT_GPIO = "y"
+	default n
+	help
+	  Select if GPIO slider switch is attached.
+
+config MOGAMI_VIBRATOR
+	bool "Mogami Vibrator"
+	default n
+	help
+	  Select to get vibrator support on the Mogami board
+
+config MOGAMI_VIBRATOR_ON_VOLTAGE
+	int "Mogami Vibrator on voltage(mV)"
+	default "2700"
+	depends on MOGAMI_VIBRATOR
+	help
+	  Set value in milli voltage(mV). Default voltage is 2700mV.
 
 config MSM_SLEEP_TIME_OVERRIDE
 	bool "Allow overriding suspend/sleep time with PM module parameter"
@@ -2114,6 +2263,15 @@ config MSM_DLOAD_MODE
 		make the kernel reboot on a kernel panic - that must be
 		enabled via another mechanism.
 
+config SEMC_RPC_SERVER_HANDSET
+	bool "Enable SEMC handset rpc dispatcher"
+	depends on ARCH_MSM7X30 && MSM_ONCRPCROUTER && !MSM_RPCSERVER_HANDSET
+	default y
+	help
+	 This enables the SEMC version of rpc_server_handset message dispatcher.
+	 This cannot cooperate with MSM_RPCSERVER_HANDSET. If this is set,
+	 an error will be generated.
+
 config MSM_JTAG
         bool "JTAG debug and trace support"
 	help
@@ -2143,6 +2301,66 @@ config MSM_SLEEP_STATS
 	bool "Enable exporting of MSM sleep stats to userspace"
 	depends on CPU_IDLE
 	default n
+
+config USB_PRODUCT_SUFFIX
+	hex "Suffix of USB product id"
+	default 0
+
+config USB_HS_DRV_AMPLITUDE
+	int "USB high speed driver amplitude ratio"
+	range 0 4
+	default 0
+	help
+	  Set 0 if ratio is HS_DRV_AMPLITUDE_DEFAULT
+	  Set 1 if ratio is HS_DRV_AMPLITUDE_ZERO_PERCENT
+	  Set 2 if ratio is HS_DRV_AMPLITUDE_25_PERCENTI
+	  Set 3 if ratio is HS_DRV_AMPLITUDE_5_PERCENT
+	  Set 4 if ratio is HS_DRV_AMPLITUDE_75_PERCENT
+
+	  The ratio is defined in kernel\arch\arm\mach-msm\include\mach\msm_hsusb.h
+
+config PMIC_GPIO_25
+	bool "Enable PMIC_GPIO_25 support"
+	default n
+	help
+	  This enables the PMIC_GPIO_25 support.
+
+config USE_PMIC_CHARGING_ON_AMSS
+	bool "Charging functionality on PMIC on AMSS"
+	depends on ARCH_MSM7X30
+	default n
+
+config SEMC_MOGAMI_FELICA_SUPPORT
+	bool "Enable Mogami FeliCa support"
+	depends on ARCH_MSM7X30
+	default n
+	help
+	  This enables FeliCa support on a Mogami product.
+
+config SEMC_MOGAMI_IRDA
+	bool "Enable Mogami IrDA support"
+	depends on ARCH_MSM7X30
+	default n
+	help
+	  This enables the Mogami IrDA support.
+
+config MOGAMI_PMIC_KEYPAD
+	bool "Enable Mogami pmic gpio keypad support"
+	depends on ARCH_MSM7X30
+	default n
+	help
+	  This enables the Mogami pmic gpio keypad support.
+
+config SEMC_BATTERY_SHOW_HEALTH
+	bool "Enable battery health support"
+	depends on BATTERY_SEMC_ARCH
+	default n if BATTERY_CHARGALG
+	default y if !BATTERY_CHARGALG
+	help
+	  Enable if battery health property is not supported
+	  in any other module besides this.
+	  This enables support for power supply class
+	  POWER_SUPPLY_PROP_HEALTH property.
 
 config MSM_SLEEP_STATS_DEVICE
 	bool "Enable exporting of MSM sleep device stats to userspace"
