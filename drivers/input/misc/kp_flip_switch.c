@@ -21,6 +21,7 @@
 #include <linux/interrupt.h>
 #include <linux/input.h>
 #include <linux/gpio.h>
+#include <linux/slab.h>
 
 #include <linux/input/kp_flip_switch.h>
 
