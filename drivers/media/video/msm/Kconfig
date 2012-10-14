@@ -49,6 +49,28 @@ config OV5647
 	---help---
 	  OV 5M Bayer Sensor with AutoFocus
 
+config SEIX006
+    bool "Sensor sexi006"
+    depends on MSM_CAMERA
+    default y
+    ---help---
+      This is a camera driver for the sexi006 sensor
+          
+config OVM7692
+    bool "Sensor ovm7692"
+	depends on MSM_CAMERA
+	---help---
+	  Omnivision VGA fixed focus sensor
+
+config MT9V114
+    bool "Sensor mt9v114"
+	depends on MSM_CAMERA
+	---help---
+	  AAC/Heptagon VGA fixed focus sensor
+#	Used as front sensor
+#	Uses parallel interface
+#	Previously known as Hydrogen
+
 config AD5046_ACT
 	bool "Lens actuator ad5046"
 	depends on MSM_CAMERA && OV5647
@@ -159,6 +181,20 @@ config S5K4E1
 	  It is a Bayer 5MP sensor with auto focus and it supports
 	  two mipi lanes, required for msm7x2xA platform.
 	  Say Y here if this is msm7x2xA variant platform.
+
+config SEMC_CAMERA_MODULE
+	bool "SEMC specific camera (Main camera)"
+	depends on MSM_CAMERA
+	default y
+	---help---
+	  SEMC specific camera module
+
+config SEMC_SUB_CAMERA_MODULE
+	bool "SEMC specific camera (Sub camera)"
+	depends on MSM_CAMERA
+	default y
+	---help---
+	  SEMC specific sub camera module
 
 config DW9712_ACT
 	bool "Lens actuator dw9721"
