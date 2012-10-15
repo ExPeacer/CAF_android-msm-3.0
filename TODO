@@ -1,10 +1,5 @@
-include/linux/cyttsp.h - need to check/original CAF
-drivers/input/misc/gpio* - need to check/original CAF
-drivers/input/touchscreen/msm_* - need to check/original CAF
-drivers/leds/leds-pmic8058.c - need to check/original CAF
-drivers/leds/ledtrig-timer.c - need to check/original CAF
-drivers/leds/Kconfig - added configs, but need to check
-drivers/power/power_supply_core.c - need to check/original CAF
-drivers/video/hdmi_msm.c - need to check/original CAF
-drivers/media/video - untouched/fully original CAF
+- Board related changes
+- Touch drivers
+- Camera fixes
+some more...
 
