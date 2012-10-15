@@ -686,10 +686,10 @@ static void __init set_pm8058_sub_devices(void)
 }
 
 static struct pm8058_platform_data pm8058_7x30_data = {
-	.irq_pdata = PMIC8058_IRQ_BASE,
+//	.irq_base = PMIC8058_IRQ_BASE,
 
-	.num_subdevs = ARRAY_SIZE(pm8058_subdevs),
-	.sub_devices = pm8058_subdevs,
+//	.num_subdevs = ARRAY_SIZE(pm8058_subdevs),
+//	.sub_devices = pm8058_subdevs,
 };
 
 static struct i2c_board_info pm8058_boardinfo[] __initdata = {
@@ -775,10 +775,12 @@ static void config_gpio_table(uint32_t *table, int len)
 	}
 }
 
-static void config_camera_on_gpios(void)
+static int config_camera_on_gpios(void)
 {
 	config_gpio_table(camera_on_gpio_table,
 			  ARRAY_SIZE(camera_on_gpio_table));
+
+	return 0;
 }
 
 static void config_camera_off_gpios(void)
