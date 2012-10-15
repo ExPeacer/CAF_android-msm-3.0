@@ -27,6 +27,7 @@
 #include <linux/mutex.h>
 #include <linux/pm.h>
 #include <linux/pm_runtime.h>
+#include <linux/slab.h>
 
 #include <linux/input/pmic8058-keypad.h>
 

@@ -1,10 +1,12 @@
-/* kernel/drivers/input/misc/apds9792.c
+/* kernel/drivers/input/misc/apds9702.c
  *
  * Copyright (C) 2010 Sony Ericsson Mobile Communications AB.
+ * Copyright (C) 2012 Sony Mobile Communications AB.
  *
- * Author: Aleksej Makarov <aleksej.makarov@sonyericsson.com>
- *         Takashi Shiina <Takashi.Shiina@sonyericsson.com>
- *         Chikaharu Gonnokami <Chikaharu.X.Gonnokami@sonyericsson.com>
+ * Author: Aleksej Makarov <aleksej.makarov@sonymobile.com>
+ *         Takashi Shiina <Takashi.Shiina@sonymobile.com>
+ *         Chikaharu Gonnokami <Chikaharu.X.Gonnokami@sonymobile.com>
+ *         Tadashi Kubo <Tadashi.Kubo@sonymobile.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -12,6 +14,7 @@
  * of the License, or (at your option) any later version.
  */
 
+#include <linux/slab.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/i2c.h>
@@ -23,7 +26,6 @@
 #include <linux/ctype.h>
 #include <linux/input.h>
 #include <linux/delay.h>
-#include <linux/slab.h>
 
 #define APDS9702_VENDOR      0x0001
 
@@ -44,6 +46,7 @@
 #define DOUT_VALUE_IF_DETECTED  0
 
 #define APDS9702_NUM_TRIES      5
+#define APDS9702_WAIT_TIME      5
 
 struct apds9702data {
 	struct input_dev *input_dev;
@@ -51,8 +54,8 @@ struct apds9702data {
 	struct mutex lock;
 	int interrupt;
 	u16 ctl_reg;
-	unsigned int hidden_bit;
 	unsigned int active:1;
+	struct apds9702_platform_data *pdata;
 };
 
 static int apds9702_write_byte(struct i2c_client *i2c_client, u8 reg, u8 val)
@@ -67,6 +70,7 @@ static int apds9702_write_byte(struct i2c_client *i2c_client, u8 reg, u8 val)
 			dev_err(&i2c_client->dev,
 					"i2c_smbus write failed, %d\n", rc);
 			pdata->hw_config(0);
+			msleep(APDS9702_WAIT_TIME);
 			pdata->hw_config(1);
 		} else
 			return 0;
@@ -119,7 +123,7 @@ static irqreturn_t apds9702_work(int irq, void *handle)
 	return IRQ_HANDLED;
 }
 
-static int apds9702_detect(struct i2c_client *client, int kind,
+static int apds9702_detect(struct i2c_client *client,
 			  struct i2c_board_info *info)
 {
 	struct i2c_adapter *adapter = client->adapter;
@@ -169,15 +173,14 @@ static ssize_t attr_threshold_set(struct device *dev,
 }
 
 static ssize_t attr_nburst_show(struct device *dev,
-				struct device_attribute *attr,
-				char *buf)
+				   struct device_attribute *attr,
+				   char *buf)
 {
 	struct apds9702data *data = dev_get_drvdata(dev);
 	int nburst =
 		(data->ctl_reg & APDS9702_NBURST_MAX << APDS9702_NBURST_BIT)
 		>> APDS9702_NBURST_BIT;
 
-	nburst |= data->hidden_bit;
 	return snprintf(buf, PAGE_SIZE, "%d\n", nburst);
 }
 
@@ -189,13 +192,12 @@ static ssize_t attr_nburst_set(struct device *dev,
 	unsigned long nb;
 	struct apds9702data *data = dev_get_drvdata(dev);
 	ret = strict_strtoul(buf, 10, &nb);
-	if (!ret) {
+	if (!ret && nb <= APDS9702_NBURST_MAX) {
 		mutex_lock(&data->lock);
-		data->hidden_bit = nb & 16;
-		nb &= ~(16);
 		data->ctl_reg = (data->ctl_reg &
 			~(APDS9702_NBURST_MAX << APDS9702_NBURST_BIT)) |
 			(nb << APDS9702_NBURST_BIT);
+		dev_dbg(dev, "%s nburst is %ld\n", __func__, nb);
 		mutex_unlock(&data->lock);
 		return size;
 	}
@@ -293,6 +295,29 @@ static void remove_sysfs_interfaces(struct device *dev)
 		device_remove_file(dev, attributes + i);
 }
 
+#if defined(CONFIG_PM)
+static int apds9702_suspend(struct device *dev)
+{
+	struct apds9702data *data = dev_get_drvdata(dev);
+
+	data->pdata->power_mode(0);
+
+	return 0;
+}
+
+static int apds9702_resume(struct device *dev)
+{
+	struct apds9702data *data = dev_get_drvdata(dev);
+
+	data->pdata->power_mode(1);
+
+	return 0;
+}
+#else /* !CONFIG_PM */
+#define apds9702_suspend NULL
+#define apds9702_resume NULL
+#endif /* CONFIG_PM */
+
 static int apds9702_device_open(struct input_dev *dev)
 {
 	struct apds9702data *data = input_get_drvdata(dev);
@@ -326,11 +351,13 @@ static int apds9702_probe(struct i2c_client *client,
 	struct apds9702data *data;
 
 	dev_dbg(&client->dev, "%s\n", __func__);
-	if (!pdata || !pdata->gpio_setup || !pdata->hw_config) {
+	if (!pdata || !pdata->power_mode || !pdata->gpio_setup
+			|| !pdata->hw_config) {
 		dev_err(&client->dev, "%s: platform data is not complete.\n",
 			__func__);
 		return -ENODEV;
 	}
+	pdata->power_mode(1);
 	err = pdata->gpio_setup(1);
 	if (err) {
 		dev_err(&client->dev, "%s: gpio_setup failed\n", __func__);
@@ -351,6 +378,7 @@ static int apds9702_probe(struct i2c_client *client,
 		goto exit_alloc_data_failed;
 	}
 	data->client = client;
+	data->pdata = pdata;
 	i2c_set_clientdata(client, data);
 	mutex_init(&data->lock);
 	data->interrupt = gpio_to_irq(pdata->gpio_dout);
@@ -411,7 +439,7 @@ static int apds9702_probe(struct i2c_client *client,
 	}
 	err = irq_set_irq_wake(data->interrupt, pdata->is_irq_wakeup);
 	if (err) {
-		dev_err(&client->dev, "%s: irq_set_irq_wake failed\n", __func__);
+		dev_err(&client->dev, "%s: set_irq_wake failed\n", __func__);
 		goto err_request_wake_irq;
 	}
 
@@ -450,13 +478,11 @@ static int apds9702_remove(struct i2c_client *client)
 	input_set_drvdata(data->input_dev, NULL);
 	pdata->hw_config(0);
 	pdata->gpio_setup(0);
+	pdata->power_mode(0);
 	kfree(data);
 	i2c_set_clientdata(client, NULL);
 	return 0;
 }
-
-static unsigned short normal_i2c[] = {I2C_CLIENT_END};
-I2C_CLIENT_INSMOD_1(apds9702);
 
 static const struct i2c_device_id apds9702_id[] = {
 	{ APDS9702_NAME, 0 },
@@ -464,6 +490,11 @@ static const struct i2c_device_id apds9702_id[] = {
 };
 
 MODULE_DEVICE_TABLE(i2c, apds9702_id);
+
+static const struct dev_pm_ops apds9702_pm_ops = {
+	.suspend	= apds9702_suspend,
+	.resume	= apds9702_resume,
+};
 
 static struct i2c_driver apds9702_driver = {
 	.probe = apds9702_probe,
@@ -474,6 +505,7 @@ static struct i2c_driver apds9702_driver = {
 	.driver	 = {
 		.owner = THIS_MODULE,
 		.name = APDS9702_NAME,
+		.pm = &apds9702_pm_ops,
 	},
 };
 
