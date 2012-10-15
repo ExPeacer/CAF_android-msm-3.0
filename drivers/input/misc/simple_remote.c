@@ -13,6 +13,7 @@
  * of the License, or (at your option) any later version.
  */
 
+#include <linux/slab.h>
 #include <linux/platform_device.h>
 #include <linux/module.h>
 #include <linux/workqueue.h>
