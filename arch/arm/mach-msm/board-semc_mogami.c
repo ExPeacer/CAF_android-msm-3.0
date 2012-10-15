@@ -69,7 +69,7 @@
 #include <asm/mach/flash.h>
 #include "devices.h"
 #include "timer.h"
-#include "mach/socinfo.h"
+#include <mach/socinfo.h>
 #include "cpufreq.h"
 #include "board-semc_mogami-keypad.h"
 #include "board-semc_mogami-gpio.h"
@@ -686,7 +686,7 @@ static void __init set_pm8058_sub_devices(void)
 }
 
 static struct pm8058_platform_data pm8058_7x30_data = {
-	.irq_base = PMIC8058_IRQ_BASE,
+	.irq_pdata = PMIC8058_IRQ_BASE,
 
 	.num_subdevs = ARRAY_SIZE(pm8058_subdevs),
 	.sub_devices = pm8058_subdevs,
@@ -2628,7 +2628,7 @@ static struct battery_regulation_vs_temperature id_bat_reg = {
 	/* Cold, Normal, Warm, Overheat */
 	{5, 45,		55,	127},	/* temp */
 	{0, 4200,	4000,	0},	/* volt */
-	{0, USHORT_MAX,	400,	0},	/* curr */
+	{0, USHRT_MAX,	400,	0},	/* curr */
 };
 
 /* Driver(s) to be notified upon change in algorithm */
