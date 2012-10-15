@@ -23,6 +23,7 @@
 #include <linux/ctype.h>
 #include <linux/input.h>
 #include <linux/delay.h>
+#include <linux/slab.h>
 
 #define APDS9702_VENDOR      0x0001
 
