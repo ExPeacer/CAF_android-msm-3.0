@@ -409,9 +409,9 @@ static int apds9702_probe(struct i2c_client *client,
 		dev_err(&client->dev, "%s: request_irq failed\n", __func__);
 		goto err_request_detect_irq;
 	}
-	err = set_irq_wake(data->interrupt, pdata->is_irq_wakeup);
+	err = irq_set_irq_wake(data->interrupt, pdata->is_irq_wakeup);
 	if (err) {
-		dev_err(&client->dev, "%s: set_irq_wake failed\n", __func__);
+		dev_err(&client->dev, "%s: irq_set_irq_wake failed\n", __func__);
 		goto err_request_wake_irq;
 	}
 

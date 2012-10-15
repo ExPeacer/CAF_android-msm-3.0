@@ -1,6 +1,6 @@
 /* [kernel/drivers/input/misc/simple_remote.c]
  *
- * Copyright (C) [2010] Sony Ericsson Mobile Communications AB.
+ * Copyright (C) 2011 Sony Ericsson Mobile Communications AB.
  *
  * Authors: Takashi Shiina <takashi.shiina@sonyericsson.com>
  *          Tadashi Kubo <tadashi.kubo@sonyericsson.com>
@@ -115,7 +115,6 @@ static ssize_t simple_remote_attrs_store_property(struct device *dev,
 {\
 	.attr = { .name = _name,\
 			.mode = (S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH),\
-			.owner = THIS_MODULE\
 			},\
 	.show = simple_remote_attrs_show_property,\
 	.store = simple_remote_attrs_store_property,\
@@ -130,6 +129,7 @@ static ssize_t simple_remote_attrs_store_property(struct device *dev,
 #define SIMPLE_REMOTE_TRIG_PRD_T_NAME "btn_trig_period_time"
 #define SIMPLE_REMOTE_TRIG_HST_F_NAME "btn_trig_hyst_freq"
 #define SIMPLE_REMOTE_TRIG_HST_T_NAME "btn_trig_hyst_time"
+#define MAX_ATTRS_NAME_LEN 32
 
 static struct device_attribute simple_remote_attrs[] = {
 	SIMPLE_REMOTE_ATTR(SIMPLE_REMOTE_ACC_MIN_VALS_NAME),
@@ -210,43 +210,52 @@ static ssize_t simple_remote_attrs_show_property(struct device *dev,
 
 	mutex_lock(&jack->simple_remote_mutex);
 
-	if (!strcmp(SIMPLE_REMOTE_ACC_MIN_VALS_NAME, attr->attr.name)) {
+	if (!strncmp(SIMPLE_REMOTE_ACC_MIN_VALS_NAME, attr->attr.name,
+		     MAX_ATTRS_NAME_LEN)) {
 		retval = simple_remote_attrs_set_data_buffer(
 			buf, simple_remote_acc_min,
 			ARRAY_SIZE(simple_remote_acc_min));
 		goto done;
 	}
 
-	if (!strcmp(SIMPLE_REMOTE_ACC_MAX_VALS_NAME, attr->attr.name)) {
+	if (!strncmp(SIMPLE_REMOTE_ACC_MAX_VALS_NAME, attr->attr.name,
+		     MAX_ATTRS_NAME_LEN)) {
 		retval = simple_remote_attrs_set_data_buffer(
 			buf, simple_remote_acc_max,
 			ARRAY_SIZE(simple_remote_acc_max));
 		goto done;
 	}
 
-	if (!strcmp(SIMPLE_REMOTE_BTN_MIN_VALS_NAME, attr->attr.name)) {
+	if (!strncmp(SIMPLE_REMOTE_BTN_MIN_VALS_NAME, attr->attr.name,
+		     MAX_ATTRS_NAME_LEN)) {
 		retval = simple_remote_attrs_set_data_buffer(
 			buf, simple_remote_btn_min,
 			ARRAY_SIZE(simple_remote_btn_min));
 		goto done;
 	}
 
-	if (!strcmp(SIMPLE_REMOTE_BTN_MAX_VALS_NAME, attr->attr.name)) {
+	if (!strncmp(SIMPLE_REMOTE_BTN_MAX_VALS_NAME, attr->attr.name,
+		     MAX_ATTRS_NAME_LEN)) {
 		retval = simple_remote_attrs_set_data_buffer(
 			buf, simple_remote_btn_max,
 			ARRAY_SIZE(simple_remote_btn_max));
 		goto done;
 	}
 
-	if (!strcmp(SIMPLE_REMOTE_TRIG_LVL_NAME, attr->attr.name))
+	if (!strncmp(SIMPLE_REMOTE_TRIG_LVL_NAME, attr->attr.name,
+		     MAX_ATTRS_NAME_LEN))
 		retval = jack->interface->get_trig_level(&val);
-	else if (!strcmp(SIMPLE_REMOTE_TRIG_PRD_F_NAME, attr->attr.name))
+	else if (!strncmp(SIMPLE_REMOTE_TRIG_PRD_F_NAME, attr->attr.name,
+			  MAX_ATTRS_NAME_LEN))
 		retval = jack->interface->get_period_freq(&val);
-	else if (!strcmp(SIMPLE_REMOTE_TRIG_PRD_T_NAME, attr->attr.name))
+	else if (!strncmp(SIMPLE_REMOTE_TRIG_PRD_T_NAME, attr->attr.name,
+			  MAX_ATTRS_NAME_LEN))
 		retval = jack->interface->get_period_time(&val);
-	else if (!strcmp(SIMPLE_REMOTE_TRIG_HST_F_NAME, attr->attr.name))
+	else if (!strncmp(SIMPLE_REMOTE_TRIG_HST_F_NAME, attr->attr.name,
+			  MAX_ATTRS_NAME_LEN))
 		retval = jack->interface->get_hysteresis_freq(&val);
-	else if (!strcmp(SIMPLE_REMOTE_TRIG_HST_T_NAME, attr->attr.name))
+	else if (!strncmp(SIMPLE_REMOTE_TRIG_HST_T_NAME, attr->attr.name,
+			  MAX_ATTRS_NAME_LEN))
 		retval = jack->interface->get_hysteresis_time(&val);
 
 	if (!retval)
@@ -258,7 +267,7 @@ done:
 	return retval;
 }
 
-static void simple_remote_attrs_update_data(const char *buf, size_t count,
+static int simple_remote_attrs_update_data(const char *buf, size_t count,
 					    int *array, int array_len)
 {
 	char tmp_buf[10];
@@ -278,21 +287,21 @@ static void simple_remote_attrs_update_data(const char *buf, size_t count,
 			else if (isdigit(q[stepper]))
 				tmp_buf[stepper] = q[stepper];
 			else
-				return;
+				return -EINVAL;
 		}
 
 		tmp_buf[stepper] = '\0';
 
 		if (strict_strtol(tmp_buf, 10, &conversion))
-			return;
+			return -EINVAL;
 
 		/* Making sure that we get values that are in range */
-		if (conversion <= SHORT_MAX && conversion >= SHORT_MIN) {
+		if (conversion <= SHRT_MAX && conversion >= SHRT_MIN) {
 			array[value_count] = (short)conversion;
 		} else {
 			pr_err("%s - Value out of range. Aborting"
 				" change!\n", __func__);
-			return;
+			return -EINVAL;
 		}
 
 		value_count++;
@@ -300,6 +309,7 @@ static void simple_remote_attrs_update_data(const char *buf, size_t count,
 		count -= (i + 1);
 	} while (count > 0 && value_count < array_len);
 
+	return 0;
 }
 
 static ssize_t simple_remote_attrs_store_property(struct device *dev,
@@ -307,43 +317,64 @@ static ssize_t simple_remote_attrs_store_property(struct device *dev,
 						  const char *buf, size_t count)
 {
 	long val;
+	int ret;
 
 	struct simple_remote_driver *jack = dev_get_drvdata(dev);
 
 	mutex_lock(&jack->simple_remote_mutex);
 
-	strict_strtol(buf, 10, &val);
-
-	if (!strcmp(SIMPLE_REMOTE_ACC_MIN_VALS_NAME, attr->attr.name)) {
-		simple_remote_attrs_update_data(
+	if (!strncmp(SIMPLE_REMOTE_ACC_MIN_VALS_NAME, attr->attr.name,
+		     MAX_ATTRS_NAME_LEN)) {
+		ret = simple_remote_attrs_update_data(
 			buf, count, simple_remote_acc_min,
 			ARRAY_SIZE(simple_remote_acc_min));
-	} else if (!strcmp(SIMPLE_REMOTE_ACC_MAX_VALS_NAME, attr->attr.name)) {
-		simple_remote_attrs_update_data(
+	} else if (!strncmp(SIMPLE_REMOTE_ACC_MAX_VALS_NAME, attr->attr.name,
+			    MAX_ATTRS_NAME_LEN)) {
+		ret = simple_remote_attrs_update_data(
 			buf, count, simple_remote_acc_max,
 			ARRAY_SIZE(simple_remote_acc_max));
-	} else if (!strcmp(SIMPLE_REMOTE_BTN_MIN_VALS_NAME, attr->attr.name)) {
-		simple_remote_attrs_update_data(
+	} else if (!strncmp(SIMPLE_REMOTE_BTN_MIN_VALS_NAME, attr->attr.name,
+			    MAX_ATTRS_NAME_LEN)) {
+		ret = simple_remote_attrs_update_data(
 			buf, count, simple_remote_btn_min,
 			ARRAY_SIZE(simple_remote_btn_min));
-	} else if (!strcmp(SIMPLE_REMOTE_BTN_MAX_VALS_NAME, attr->attr.name)) {
-		simple_remote_attrs_update_data(
+	} else if (!strncmp(SIMPLE_REMOTE_BTN_MAX_VALS_NAME, attr->attr.name,
+			    MAX_ATTRS_NAME_LEN)) {
+		ret = simple_remote_attrs_update_data(
 			buf, count, simple_remote_btn_max,
 			ARRAY_SIZE(simple_remote_btn_max));
-	} else if (!strcmp(SIMPLE_REMOTE_TRIG_LVL_NAME, attr->attr.name))
-		jack->interface->set_trig_level(val);
-	else if (!strcmp(SIMPLE_REMOTE_TRIG_PRD_F_NAME, attr->attr.name))
-		jack->interface->set_period_freq(val);
-	else if (!strcmp(SIMPLE_REMOTE_TRIG_PRD_T_NAME, attr->attr.name))
-		jack->interface->set_period_time(val);
-	else if (!strcmp(SIMPLE_REMOTE_TRIG_HST_F_NAME, attr->attr.name))
-		jack->interface->set_hysteresis_freq(val);
-	else if (!strcmp(SIMPLE_REMOTE_TRIG_HST_T_NAME, attr->attr.name))
-		jack->interface->set_hysteresis_time(val);
+	} else {
+		ret = strict_strtol(buf, 10, &val);
 
+		if (ret) {
+			dev_err(dev, "Error when parsing string: %s\n", buf);
+			goto done;
+		}
+
+		if (!strncmp(SIMPLE_REMOTE_TRIG_LVL_NAME, attr->attr.name,
+			     MAX_ATTRS_NAME_LEN))
+			ret = jack->interface->set_trig_level(val);
+		else if (!strncmp(SIMPLE_REMOTE_TRIG_PRD_F_NAME,
+				  attr->attr.name, MAX_ATTRS_NAME_LEN))
+			ret = jack->interface->set_period_freq(val);
+		else if (!strncmp(SIMPLE_REMOTE_TRIG_PRD_T_NAME,
+				  attr->attr.name, MAX_ATTRS_NAME_LEN))
+			ret = jack->interface->set_period_time(val);
+		else if (!strncmp(SIMPLE_REMOTE_TRIG_HST_F_NAME,
+				  attr->attr.name, MAX_ATTRS_NAME_LEN))
+			ret = jack->interface->set_hysteresis_freq(val);
+		else if (!strncmp(SIMPLE_REMOTE_TRIG_HST_T_NAME,
+				  attr->attr.name, MAX_ATTRS_NAME_LEN))
+			ret = jack->interface->set_hysteresis_time(val);
+	}
+
+done:
 	mutex_unlock(&jack->simple_remote_mutex);
 
-	return count;
+	if (!ret)
+		ret = count;
+
+	return ret;
 }
 
 static int create_sysfs_interfaces(struct device *dev)
