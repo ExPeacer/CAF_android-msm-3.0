@@ -687,6 +687,7 @@ static void __init set_pm8058_sub_devices(void)
 }
 
 static struct pm8058_platform_data pm8058_7x30_data = {
+// Need check and fix too
 //	.irq_base = PMIC8058_IRQ_BASE,
 
 //	.num_subdevs = ARRAY_SIZE(pm8058_subdevs),
