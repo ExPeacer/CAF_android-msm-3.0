@@ -663,36 +663,12 @@ static struct pm8xxx_mpp_platform_data pm8xxx_mpp_pdata = {
 	.mpp_base	= PM8058_MPP_PM_TO_SYS(0),
 };
 
-static struct mfd_cell pm8058_subdevs[5];
-
 static struct pm8058_platform_data pm8058_7x30_data = {
 	.irq_pdata		= &pm8xxx_irq_pdata,
 	.gpio_pdata		= &pm8xxx_gpio_pdata,
 	.mpp_pdata		= &pm8xxx_mpp_pdata,
 	.pwm_pdata		= &pm8058_pwm_data,
 };
-
-/* Separate function for sub device populations, to be set as per device */
-static void __init set_pm8058_sub_devices(void)
-{
-	pm8058_subdevs[0] = *(get_pm8058_keypad_dev());
-
-	pm8058_subdevs[1].name = "pm8058-gpio";
-	pm8058_subdevs[1].id = -1;
-	pm8058_subdevs[1].platform_data = &pm8058_gpio_data;
-	pm8058_subdevs[1].data_size = sizeof(pm8058_gpio_data);
-
-	pm8058_subdevs[2].name = "pm8058-mpp";
-	pm8058_subdevs[2].id = -1;
-	pm8058_subdevs[2].platform_data = &pm8058_mpp_data;
-	pm8058_subdevs[2].data_size = sizeof(pm8058_mpp_data);
-
-	pm8058_subdevs[3].name = "pm8058-nfc";
-	pm8058_subdevs[3].id = -1;
-
-	pm8058_subdevs[4].name = "pm8058-upl";
-	pm8058_subdevs[4].id = -1;
-}
 
 static struct i2c_board_info pm8058_boardinfo[] __initdata = {
 	{
