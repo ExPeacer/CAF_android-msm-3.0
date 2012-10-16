@@ -19,6 +19,7 @@
 #include <linux/hrtimer.h>
 #include <../../../drivers/staging/android/timed_output.h>
 #include <linux/sched.h>
+#include <linux/module.h>
 
 #include <mach/msm_rpcrouter.h>
 
@@ -169,8 +170,9 @@ static int vibrator_get_time(struct timed_output_dev *dev)
 	case TASK_STOP:
 		ret = long_vibe_time;
 		if (hrtimer_active(&vibe_timer)) {
-			ktime_t r = hrtimer_get_remaining(&vibe_timer);
-			ret += r.tv.sec * 1000 + r.tv.nsec / 1000000;
+		ktime_t r = hrtimer_get_remaining(&vibe_timer);
+		struct timeval t = ktime_to_timeval(r);
+			ret += t.tv_sec * 1000 + t.tv_usec / 1000;
 		}
 		break;
 	case TASK_FORCE_STOP:

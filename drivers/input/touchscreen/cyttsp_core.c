@@ -907,7 +907,7 @@ static int cyttsp_wait_condition(struct cyttsp *ts,
 		if (condition(ts))
 			return true;
 		atomic_set(&ts->done, 0);
-		tout = wait_event_timeout(ts->wq, atomic_read(&ts->done), tout);
+		//tout = wait_event_timeout(ts->wq, atomic_read(&ts->done), tout);
 	}
 	ok = condition(ts);
 	dev_vdbg(ts->pdev, "%s: tout, status %s\n", __func__,
@@ -933,8 +933,8 @@ static irqreturn_t cyttsp_irq(int irq, void *handle)
 	}
 	if (atomic_read(&ts->handshake))
 		cyttsp_handshake(ts);
-	if (atomic_cmpxchg(&ts->done, 0, 1) == 0)
-		wake_up(&ts->wq);
+	//if (atomic_cmpxchg(&ts->done, 0, 1) == 0)
+	//	wake_up(&ts->wq);
 	if (atomic_read(&ts->mode) != MODE_OPERATIONAL)
 		goto exit_xy_worker;
 
@@ -1798,7 +1798,7 @@ static ssize_t firmware_write(struct file *file, struct kobject *kobj,
 
 	atomic_set(&ts->done, 0);
 	ttsp_write_block_data(ts, CY_REG_BASE, size, buf);
-	tout = wait_event_timeout(ts->wq, atomic_read(&ts->done), tout);
+//	tout = wait_event_timeout(ts->wq, atomic_read(&ts->done), tout);
 	if (is_ttsp_fwwr_done(ts)) {
 		dev_vdbg(ts->pdev, "%s: %d byte block, t=%d\n", __func__,
 				size, tout);

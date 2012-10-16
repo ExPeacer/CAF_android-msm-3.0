@@ -83,6 +83,7 @@
 #include <mach/dal_axi.h>
 #include <mach/msm_serial_hs.h>
 #include <mach/msm_reqs.h>
+#include "acpuclock.h"
 
 #include <mach/vreg.h>
 
@@ -200,6 +201,8 @@
 /* Macros assume PMIC GPIOs start at 0 */
 #define PM8058_GPIO_PM_TO_SYS(pm_gpio)     (pm_gpio + NR_GPIO_IRQS)
 #define PM8058_GPIO_SYS_TO_PM(sys_gpio)    (sys_gpio - NR_GPIO_IRQS)
+#define PM8058_MPP_BASE			   PM8058_GPIO_PM_TO_SYS(PM8058_GPIOS)
+#define PM8058_MPP_PM_TO_SYS(pm_gpio)	   (pm_gpio + PM8058_MPP_BASE)
 
 #define GPIO_BQ27520_SOC_INT 20
 #define LIPO_BAT_MAX_VOLTAGE 4200
@@ -641,55 +644,30 @@ static int pm8058_gpios_init(void)
 	return 0;
 }
 
-static struct pm8058_gpio_platform_data pm8058_gpio_data = {
-	.gpio_base = PM8058_GPIO_PM_TO_SYS(0),
-	.irq_base = PM8058_GPIO_IRQ(PMIC8058_IRQ_BASE, 0),
-	.init = pm8058_gpios_init,
+static struct pm8058_pwm_pdata pm8058_pwm_data = {
+	.config         = pm8058_pwm_config,
+	.enable         = pm8058_pwm_enable,
 };
 
-static struct pm8058_gpio_platform_data pm8058_mpp_data = {
-	.gpio_base = PM8058_GPIO_PM_TO_SYS(PM8058_GPIOS),
-	.irq_base = PM8058_MPP_IRQ(PMIC8058_IRQ_BASE, 0),
+static struct pm8xxx_irq_platform_data pm8xxx_irq_pdata = {
+	.irq_base		= PMIC8058_IRQ_BASE,
+	.devirq			= MSM_GPIO_TO_INT(PMIC_GPIO_INT),
+	.irq_trigger_flag       = IRQF_TRIGGER_LOW,
 };
 
-static struct mfd_cell pm8058_subdevs[] = {
-
-	[1].name = "pm8058-gpio",
-	[1].id = -1,
-	[1].platform_data = &pm8058_gpio_data,
-	[1].pdata_size = sizeof(pm8058_gpio_data),
-
-	[2].name = "pm8058-mpp",
-	[2].id = -1,
-	[2].platform_data = &pm8058_mpp_data,
-	[2].pdata_size = sizeof(pm8058_mpp_data),
-
-	[3].name = "pm8058-nfc",
-	[3].id = -1,
-
-	[4].name = "pm8058-upl",
-	[4].id = -1,
-
-#ifdef CONFIG_MOGAMI_PMIC_KEYPAD
-	[5].name = KP_NAME,
-	[5].platform_data = &keypad_pmic_platform_data,
-	[5].id = -1,
-	[5].pdata_size = sizeof(keypad_pmic_platform_data),
-#endif
-
+static struct pm8xxx_gpio_platform_data pm8xxx_gpio_pdata = {
+	.gpio_base		= PM8058_GPIO_PM_TO_SYS(0),
 };
 
-/* Separate function for sub device populations, to be set as per device */
-static void __init set_pm8058_sub_devices(void)
-{
-	pm8058_subdevs[0] = *(get_pm8058_keypad_dev());
-}
+static struct pm8xxx_mpp_platform_data pm8xxx_mpp_pdata = {
+	.mpp_base	= PM8058_MPP_PM_TO_SYS(0),
+};
 
 static struct pm8058_platform_data pm8058_7x30_data = {
-	.irq_pdata = PMIC8058_IRQ_BASE,
-
-	.num_subdevs = ARRAY_SIZE(pm8058_subdevs),
-	.sub_devices = pm8058_subdevs,
+	.irq_pdata		= &pm8xxx_irq_pdata,
+	.gpio_pdata		= &pm8xxx_gpio_pdata,
+	.mpp_pdata		= &pm8xxx_mpp_pdata,
+	.pwm_pdata		= &pm8058_pwm_data,
 };
 
 static struct i2c_board_info pm8058_boardinfo[] __initdata = {
@@ -775,10 +753,12 @@ static void config_gpio_table(uint32_t *table, int len)
 	}
 }
 
-static void config_camera_on_gpios(void)
+static int config_camera_on_gpios(void)
 {
 	config_gpio_table(camera_on_gpio_table,
 			  ARRAY_SIZE(camera_on_gpio_table));
+
+	return 0;
 }
 
 static void config_camera_off_gpios(void)
@@ -3021,37 +3001,46 @@ static struct i2c_board_info msm_marimba_board_info[] = {
 	 }
 };
 
-static struct msm_pm_platform_data msm_pm_data[MSM_PM_SLEEP_MODE_NR] = {
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE].supported = 1,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE].suspend_enabled = 1,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE].idle_enabled = 1,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE].latency = 8594,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE].residency = 23740,
+static struct msm_pm_platform_data msm_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
+	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_POWER_COLLAPSE)] = {
+	.idle_supported = 1,
+	.suspend_enabled = 1,
+	.idle_enabled = 1,
+	.latency = 8594,
+	.residency = 23740,
+	},
 
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_NO_XO_SHUTDOWN].supported = 1,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_NO_XO_SHUTDOWN].suspend_enabled = 1,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_NO_XO_SHUTDOWN].idle_enabled = 1,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_NO_XO_SHUTDOWN].latency = 4594,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_NO_XO_SHUTDOWN].residency = 23740,
+	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_POWER_COLLAPSE_NO_XO_SHUTDOWN)] = {
+	.idle_supported = 1,
+	.suspend_enabled = 1,
+	.idle_enabled = 1,
+	.latency = 4594,
+	.residency = 23740,
+	},
 
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE].supported = 1,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE].suspend_enabled = 0,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE].idle_enabled = 1,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE].latency = 500,
-	[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE].residency = 6000,
+	[MSM_PM_MODE(1, MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE)] = {
+	.idle_supported = 1,
+	.suspend_enabled = 0,
+	.idle_enabled = 1,
+	.latency = 500,
+	.residency = 6000,
+	},
 
-	[MSM_PM_SLEEP_MODE_RAMP_DOWN_AND_WAIT_FOR_INTERRUPT].supported = 1,
-	[MSM_PM_SLEEP_MODE_RAMP_DOWN_AND_WAIT_FOR_INTERRUPT].suspend_enabled
-	    = 1,
-	[MSM_PM_SLEEP_MODE_RAMP_DOWN_AND_WAIT_FOR_INTERRUPT].idle_enabled = 0,
-	[MSM_PM_SLEEP_MODE_RAMP_DOWN_AND_WAIT_FOR_INTERRUPT].latency = 443,
-	[MSM_PM_SLEEP_MODE_RAMP_DOWN_AND_WAIT_FOR_INTERRUPT].residency = 1098,
+	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_RAMP_DOWN_AND_WAIT_FOR_INTERRUPT)] = {
+	.idle_supported = 1,
+	.suspend_enabled = 1,
+	.idle_enabled = 0,
+	.latency = 443,
+	.residency = 1098,
+	},
 
-	[MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT].supported = 1,
-	[MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT].suspend_enabled = 1,
-	[MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT].idle_enabled = 1,
-	[MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT].latency = 2,
-	[MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT].residency = 0,
+	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT)] = {
+	.idle_supported = 1,
+	.suspend_enabled = 1,
+	.idle_enabled = 1,
+	.latency = 2,
+	.residency = 0,
+	},
 };
 
 static struct resource qsd_spi_resources[] = {
@@ -3151,8 +3140,6 @@ static void msm_qsd_spi_gpio_release(void)
 
 static struct msm_spi_platform_data qsd_spi_pdata = {
 	.max_clock_speed = 26331429,
-	.clk_name = "spi_clk",
-	.pclk_name = "spi_pclk",
 	.gpio_config = msm_qsd_spi_gpio_config,
 	.gpio_release = msm_qsd_spi_gpio_release,
 	.dma_config = msm_qsd_spi_dma_config,
@@ -3372,10 +3359,10 @@ static struct kgsl_cpufreq_voter kgsl_cpufreq_voter = {
 	},
 };
 
-struct resource kgsl_3d0_resources[] = {
+static struct resource kgsl_3d0_resources[] = {
 	{
 		.name  = KGSL_3D0_REG_MEMORY,
-		.start = 0xA3500000, /* 3D GRP address */
+		.start = 0xA3500000,
 		.end = 0xA351ffff,
 		.flags = IORESOURCE_MEM,
 	},
@@ -3388,40 +3375,31 @@ struct resource kgsl_3d0_resources[] = {
 };
 
 static struct kgsl_device_platform_data kgsl_3d0_pdata = {
-	.pwr_data = {
-		.pwrlevel = {
-			{
-				.gpu_freq = 245760000,
-				.bus_freq = 192000000,
-				.io_fraction = 0,
-			},
-			{
-				.gpu_freq = 192000000,
-				.bus_freq = 152000000,
-				.io_fraction = 33,
-			},
-			{
-				.gpu_freq = 192000000,
-				.bus_freq = 0,
-				.io_fraction = 100,
-			},
+	.pwrlevel = {
+		{
+			.gpu_freq = 245760000,
+			.bus_freq = 192000000,
+			.io_fraction = 0,
 		},
-		.init_level = 0,
-		.num_levels = 3,
-		.set_grp_async = set_grp3d_async,
-		.idle_timeout = HZ/20,
-		.nap_allowed = true,
-	},
-	.clk = {
-		.name = {
-			.clk = "grp_clk",
-			.pclk = "grp_pclk",
+		{
+			.gpu_freq = 192000000,
+			.bus_freq = 152000000,
+			.io_fraction = 33,
+		},
+		{
+			.gpu_freq = 192000000,
+			.bus_freq = 0,
+			.io_fraction = 100,
 		},
 	},
-	.imem_clk_name = {
-		.clk = "imem_clk",
-		.pclk = NULL,
-	},
+	.init_level = 0,
+	.num_levels = 3,
+	.set_grp_async = set_grp3d_async,
+	.idle_timeout = HZ/20,
+	.nap_allowed = true,
+	.idle_needed = true,
+	.clk_map = KGSL_CLK_SRC | KGSL_CLK_CORE |
+		KGSL_CLK_IFACE | KGSL_CLK_MEM,
 };
 
 struct platform_device msm_kgsl_3d0 = {
@@ -3450,26 +3428,19 @@ static struct resource kgsl_2d0_resources[] = {
 };
 
 static struct kgsl_device_platform_data kgsl_2d0_pdata = {
-	.pwr_data = {
-		.pwrlevel = {
-			{
-				.gpu_freq = 0,
-				.bus_freq = 192000000,
-			},
-		},
-		.init_level = 0,
-		.num_levels = 1,
-		/* HW workaround, run Z180 SYNC @ 192 MHZ */
-		.set_grp_async = NULL,
-		.idle_timeout = HZ/10,
-		.nap_allowed = true,
-	},
-	.clk = {
-		.name = {
-			.clk = "grp_2d_clk",
-			.pclk = "grp_2d_pclk",
+	.pwrlevel = {
+		{
+			.gpu_freq = 0,
+			.bus_freq = 192000000,
 		},
 	},
+	.init_level = 0,
+	.num_levels = 1,
+	.set_grp_async = NULL,
+	.idle_timeout = HZ/10,
+	.nap_allowed = true,
+	.idle_needed = true,
+	.clk_map = KGSL_CLK_CORE | KGSL_CLK_IFACE,
 };
 
 struct platform_device msm_kgsl_2d0 = {
@@ -4322,7 +4293,7 @@ static struct msm_tsif_platform_data tsif_platform_data = {
 #endif /* defined(CONFIG_TSIF) || defined(CONFIG_TSIF_MODULE) */
 
 static struct msm_spm_platform_data msm_spm_data __initdata = {
-	.reg_base_addr = MSM_SAW_BASE,
+	.reg_base_addr = MSM_SAW0_BASE,
 
 	.reg_init_values[MSM_SPM_REG_SAW_CFG] = 0x05,
 	.reg_init_values[MSM_SPM_REG_SAW_SPM_CTL] = 0x18,
@@ -4382,14 +4353,14 @@ static void __init msm7x30_init(void)
 
 	wlan_init_seq();
 
-	msm_clock_init(msm_clocks_7x30, msm_num_clocks_7x30);
+	msm_clock_init(&msm7x30_clock_init_data);
 
 	mogami_temp_fixups();
 
 	msm7x30_init_uart3();
 
 	msm_spm_init(&msm_spm_data, 1);
-	msm_acpu_clock_init(&msm7x30_clock_data);
+	acpuclk_init(&acpuclk_7x30_soc_data);
 
 	hsusb_chg_set_supplicants(hsusb_chg_supplied_to,
 				  ARRAY_SIZE(hsusb_chg_supplied_to));
@@ -4519,61 +4490,12 @@ static void __init msm7x30_allocate_memory_regions(void)
 	void *addr;
 	unsigned long size;
 
-	size = pmem_sf_size;
-	if (size) {
-		addr = alloc_bootmem(size);
-		android_pmem_pdata.start = __pa(addr);
-		android_pmem_pdata.size = size;
-		pr_info("allocating %lu bytes at %p (%lx physical) for sf "
-			"pmem arena\n", size, addr, __pa(addr));
-	}
-
 	size = fb_size ? : MSM_FB_SIZE;
-	addr = alloc_bootmem(size);
+	addr = alloc_bootmem_align(size, 0x1000);
 	msm_fb_resources[0].start = __pa(addr);
 	msm_fb_resources[0].end = msm_fb_resources[0].start + size - 1;
 	pr_info("allocating %lu bytes at %p (%lx physical) for fb\n",
 		size, addr, __pa(addr));
-
-/*
-	size = gpu_phys_size;
-	if (size) {
-		addr = alloc_bootmem(size);
-		kgsl_resources[1].start = __pa(addr);
-		kgsl_resources[1].end = kgsl_resources[1].start + size - 1;
-		pr_info("allocating %lu bytes at %p (%lx physical) for "
-			"KGSL\n", size, addr, __pa(addr));
-	}
-*/
-
-	size = pmem_adsp_size;
-
-	if (size) {
-		addr = __alloc_bootmem(size, 8*1024, __pa(MAX_DMA_ADDRESS));
-		android_pmem_adsp_pdata.start = __pa(addr);
-		android_pmem_adsp_pdata.size = size;
-		pr_info("allocating %lu bytes at %p (%lx physical) for adsp "
-			"pmem arena\n", size, addr, __pa(addr));
-	}
-
-	size = pmem_camera_size;
-	if (size) {
-		addr = alloc_bootmem(size);
-		android_pmem_camera_pdata.start = __pa(addr);
-		android_pmem_camera_pdata.size = size;
-		pr_info("allocating %lu bytes at %p (%lx physical) for camera "
-			"pmem arena\n", size, addr, __pa(addr));
-	}
-
-	size = pmem_kernel_ebi1_size;
-	if (size) {
-		addr = alloc_bootmem_aligned(size, 0x100000);
-		android_pmem_kernel_ebi1_pdata.start = __pa(addr);
-		android_pmem_kernel_ebi1_pdata.size = size;
-		pr_info("allocating %lu bytes at %p (%lx physical) for kernel"
-			" ebi1 pmem arena\n", size, addr, __pa(addr));
-	}
-
 }
 
 static void __init msm7x30_map_io(void)
