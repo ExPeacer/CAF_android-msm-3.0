@@ -27,6 +27,16 @@
 #include <linux/msm_ssbi.h>
 #include <mach/msm_bus.h>
 
+/* platform device data structures */
+struct msm_acpu_clock_platform_data {
+	uint32_t acpu_switch_time_us;
+	uint32_t max_speed_delta_khz;
+	uint32_t vdd_switch_time_us;
+	unsigned int max_axi_khz;
+	unsigned int max_vdd;
+	int (*acpu_set_vdd) (int mvolts);
+};
+
 struct msm_camera_io_ext {
 	uint32_t mdcphy;
 	uint32_t mdcsz;

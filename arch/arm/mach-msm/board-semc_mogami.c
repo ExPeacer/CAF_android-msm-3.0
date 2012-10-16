@@ -83,6 +83,7 @@
 #include <mach/dal_axi.h>
 #include <mach/msm_serial_hs.h>
 #include <mach/msm_reqs.h>
+#include "acpuclock.h"
 
 #include <mach/vreg.h>
 
@@ -4318,7 +4319,7 @@ static struct msm_tsif_platform_data tsif_platform_data = {
 #endif /* defined(CONFIG_TSIF) || defined(CONFIG_TSIF_MODULE) */
 
 static struct msm_spm_platform_data msm_spm_data __initdata = {
-	.reg_base_addr = MSM_SAW_BASE,
+	.reg_base_addr = MSM_SAW0_BASE,
 
 	.reg_init_values[MSM_SPM_REG_SAW_CFG] = 0x05,
 	.reg_init_values[MSM_SPM_REG_SAW_SPM_CTL] = 0x18,
@@ -4378,14 +4379,14 @@ static void __init msm7x30_init(void)
 
 	wlan_init_seq();
 
-	msm_clock_init(msm_clocks_7x30, msm_num_clocks_7x30);
+	msm_clock_init(&msm7x30_clock_init_data);
 
 	mogami_temp_fixups();
 
 	msm7x30_init_uart3();
 
 	msm_spm_init(&msm_spm_data, 1);
-	msm_acpu_clock_init(&msm7x30_clock_data);
+	acpuclk_init(&acpuclk_7x30_soc_data);
 
 	hsusb_chg_set_supplicants(hsusb_chg_supplied_to,
 				  ARRAY_SIZE(hsusb_chg_supplied_to));
