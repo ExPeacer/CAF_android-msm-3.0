@@ -4611,16 +4611,16 @@ static void __init msm7x30_fixup(struct machine_desc *desc, struct tag *tags,
 
 	mi->nr_banks = 3;
 	mi->bank[0].start = MSM_BANK0_BASE;
-	//mi->bank[0].node = PHYS_TO_NID(MSM_BANK0_BASE);
+	mi->bank[0].node = PHYS_TO_NID(MSM_BANK0_BASE);
 	mi->bank[0].size = MSM_BANK0_SIZE;
 
 	mi->bank[1].start = MSM_BANK1_BASE;
-	//mi->bank[1].node = PHYS_TO_NID(mi->bank[1].start);
+	mi->bank[1].node = PHYS_TO_NID(mi->bank[1].start);
 	mi->bank[1].size = MSM_BANK1_SIZE;
 
 	mi->bank[2].start = MSM_BANK2_BASE;
 	mi->bank[2].size = MSM_BANK2_SIZE;
-	//mi->bank[2].node = PHYS_TO_NID(mi->bank[2].start);
+	mi->bank[2].node = PHYS_TO_NID(mi->bank[2].start);
 }
 
 MACHINE_START(SEMC_MOGAMI, "mogami")

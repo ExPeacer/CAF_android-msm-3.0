@@ -91,44 +91,38 @@ struct meminfo meminfo;
 void show_mem(unsigned int filter)
 {
 	int free = 0, total = 0, reserved = 0;
-	int shared = 0, cached = 0, slab = 0, i;
+	int shared = 0, cached = 0, slab = 0, node, i;
 	struct meminfo * mi = &meminfo;
 
 	printk("Mem-info:\n");
 	show_free_areas(filter);
+	for_each_online_node(node) {
+		for_each_nodebank (i,mi,node) {
+			struct membank *bank = &mi->bank[i];
+			unsigned int pfn1, pfn2;
+			struct page *page, *end;
 
-	for_each_bank (i, mi) {
-		struct membank *bank = &mi->bank[i];
-		unsigned int pfn1, pfn2;
-		struct page *page, *end;
+			pfn1 = bank_pfn_start(bank);
+			pfn2 = bank_pfn_end(bank);
 
-		pfn1 = bank_pfn_start(bank);
-		pfn2 = bank_pfn_end(bank);
+			page = pfn_to_page(pfn1);
+			end  = pfn_to_page(pfn2 - 1) + 1;
 
-		page = pfn_to_page(pfn1);
-		end  = pfn_to_page(pfn2 - 1) + 1;
-
-		do {
-			total++;
-			if (PageReserved(page))
-				reserved++;
-			else if (PageSwapCache(page))
-				cached++;
-			else if (PageSlab(page))
-				slab++;
-			else if (!page_count(page))
-				free++;
-			else
-				shared += page_count(page) - 1;
-			page++;
-#ifdef CONFIG_SPARSEMEM
-			pfn1++;
-			if (!(pfn1 % PAGES_PER_SECTION))
-				page = pfn_to_page(pfn1);
-		} while (pfn1 < pfn2);
-#else
-		} while (page < end);
-#endif
+			do {
+				total++;
+				if (PageReserved(page))
+					reserved++;
+				else if (PageSwapCache(page))
+					cached++;
+				else if (PageSlab(page))
+					slab++;
+				else if (!page_count(page))
+					free++;
+				else
+					shared += page_count(page) - 1;
+				page++;
+			} while (page < end);
+		}
 	}
 
 	printk("%d pages of RAM\n", total);

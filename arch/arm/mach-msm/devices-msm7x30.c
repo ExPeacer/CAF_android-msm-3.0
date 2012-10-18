@@ -1248,11 +1248,11 @@ void __init msm_camera_register_device(void *res, uint32_t num,
 
 	msm_register_device(&msm_camera_device, data);
 }
-
+/*
 struct resource kgsl_3d0_resources[] = {
 	{
 		.name  = KGSL_3D0_REG_MEMORY,
-		.start = 0xA3500000, /* 3D GRP address */
+		.start = 0xA3500000, // 3D GRP address
 		.end = 0xA351ffff,
 		.flags = IORESOURCE_MEM,
 	},
@@ -1302,7 +1302,7 @@ struct platform_device msm_kgsl_3d0 = {
 static struct resource kgsl_2d0_resources[] = {
 	{
 		.name = KGSL_2D0_REG_MEMORY,
-		.start = 0xA3900000, /* Z180 base address */
+		.start = 0xA3900000, // Z180 base address
 		.end = 0xA3900FFF,
 		.flags = IORESOURCE_MEM,
 	},
@@ -1323,7 +1323,7 @@ static struct kgsl_device_platform_data kgsl_2d0_pdata = {
 	},
 	.init_level = 0,
 	.num_levels = 1,
-	/* HW workaround, run Z180 SYNC @ 192 MHZ */
+	// HW workaround, run Z180 SYNC @ 192 MHZ
 	.set_grp_async = NULL,
 	.idle_timeout = HZ/10,
 	.nap_allowed = true,
@@ -1340,7 +1340,7 @@ struct platform_device msm_kgsl_2d0 = {
 		.platform_data = &kgsl_2d0_pdata,
 	},
 };
-
+*/
 struct platform_device *msm_footswitch_devices[] = {
 	FS_PCOM(FS_GFX2D0, "vdd", "kgsl-2d0.0"),
 	FS_PCOM(FS_GFX3D,  "vdd", "kgsl-3d0.0"),
