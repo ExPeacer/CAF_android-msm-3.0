@@ -86,6 +86,7 @@
 #include <linux/debugfs.h>
 #include <linux/bma250.h>
 #include <linux/delay.h>
+#include <linux/module.h>
 
 #define BMA250_NAME                      "bma250"
 #define BMA250_VENDORID                  0x0001
@@ -590,7 +591,7 @@ static void remove_sysfs_interfaces(struct device *dev)
 		device_remove_file(dev, attributes + i);
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG_FS) && defined(CONFIG_INPUT_BMA250_REG_ACCESS)
 static int bma250_dbfs_open(struct inode *inode, struct file *fp)
 {
 	fp->private_data = inode->i_private;
