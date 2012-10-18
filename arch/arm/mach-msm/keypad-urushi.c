@@ -27,8 +27,8 @@ static struct resource resources_keypad[] = {
 		.flags	= IORESOURCE_IRQ,
 	},
 	{
-		.start	= PM8058_KEYSTUCK_IRQ(PMIC8058_IRQ_BASE),
-		.end	= PM8058_KEYSTUCK_IRQ(PMIC8058_IRQ_BASE),
+		.start	= PMIC8058_IRQ_BASE + PM8058_KEYSTUCK_IRQ,
+		.end	= PMIC8058_IRQ_BASE + PM8058_KEYSTUCK_IRQ,
 		.flags	= IORESOURCE_IRQ,
 	},
 };

@@ -589,7 +589,7 @@ static int semc_mogami_irda_init(void)
 	/* Configure PM8058 GPIO*/
 	len = sizeof(irda_pm_gpio)/sizeof(struct irda_pm_gpio_config);
 	for (i = 0; i < len; i++) {
-		ret = pm8058_gpio_config(irda_pm_gpio[i].gpio,
+		ret = pm8xxx_gpio_config(irda_pm_gpio[i].gpio,
 						irda_pm_gpio[i].param);
 		if (ret) {
 			pr_err("%s PM_GPIO_IRDA[%d] config failed\n",
@@ -613,7 +613,7 @@ static int pm8058_gpios_init(void)
 {
 	int rc;
 
-	struct pm8058_gpio sdcc_det = {
+	struct pm_gpio sdcc_det = {
 		.direction = PM_GPIO_DIR_IN,
 		.pull = PM_GPIO_PULL_NO,
 		.vin_sel = 2,
@@ -621,7 +621,7 @@ static int pm8058_gpios_init(void)
 		.inv_int_pol = 0,
 	};
 
-	struct pm8058_gpio bq24185_irq = {
+	struct pm_gpio bq24185_irq = {
 		.direction = PM_GPIO_DIR_IN,
 		.pull = PM_GPIO_PULL_NO,
 		.vin_sel = PM_GPIO_VIN_S3,
@@ -629,13 +629,13 @@ static int pm8058_gpios_init(void)
 		.inv_int_pol = 0,
 	};
 
-	rc = pm8058_gpio_config(PMIC_GPIO_SD_DET - 1, &sdcc_det);
+	rc = pm8xxx_gpio_config(PMIC_GPIO_SD_DET - 1, &sdcc_det);
 	if (rc) {
 		pr_err("%s PMIC_GPIO_SD_DET config failed\n", __func__);
 		return rc;
 	}
 
-	rc = pm8058_gpio_config(BQ24185_GPIO_IRQ - 1, &bq24185_irq);
+	rc = pm8xxx_gpio_config(BQ24185_GPIO_IRQ - 1, &bq24185_irq);
 	if (rc) {
 		pr_err("%s BQ24185_GPIO_IRQ config failed\n", __func__);
 		return rc;
@@ -643,11 +643,99 @@ static int pm8058_gpios_init(void)
 
 	return 0;
 }
+static int pm8058_pwm_config(struct pwm_device *pwm, int ch, int on)
+{
+	struct pm_gpio pwm_gpio_config = {
+		.direction      = PM_GPIO_DIR_OUT,
+		.output_buffer  = PM_GPIO_OUT_BUF_CMOS,
+		.output_value   = 0,
+		.pull           = PM_GPIO_PULL_NO,
+		.vin_sel        = PM8058_GPIO_VIN_S3,
+		.out_strength   = PM_GPIO_STRENGTH_HIGH,
+		.function       = PM_GPIO_FUNC_2,
+	};
+	int	rc = -EINVAL;
+	int	id, mode, max_mA;
 
+	id = mode = max_mA = 0;
+	switch (ch) {
+	case 0:
+	case 1:
+	case 2:
+		if (on) {
+			id = 24 + ch;
+			rc = pm8xxx_gpio_config(PM8058_GPIO_PM_TO_SYS(id - 1),
+							&pwm_gpio_config);
+			if (rc)
+				pr_err("%s: pm8xxx_gpio_config(%d): rc=%d\n",
+				       __func__, id, rc);
+		}
+		break;
+
+	case 3:
+		id = PM_PWM_LED_KPD;
+		mode = PM_PWM_CONF_DTEST3;
+		max_mA = 200;
+		break;
+
+	case 4:
+		id = PM_PWM_LED_0;
+		mode = PM_PWM_CONF_PWM1;
+		max_mA = 40;
+		break;
+
+	case 5:
+		id = PM_PWM_LED_2;
+		mode = PM_PWM_CONF_PWM2;
+		max_mA = 40;
+		break;
+
+	case 6:
+		id = PM_PWM_LED_FLASH;
+		mode = PM_PWM_CONF_DTEST3;
+		max_mA = 200;
+		break;
+
+	default:
+		break;
+	}
+
+	if (ch >= 3 && ch <= 6) {
+		if (!on) {
+			mode = PM_PWM_CONF_NONE;
+			max_mA = 0;
+		}
+		rc = pm8058_pwm_config_led(pwm, id, mode, max_mA);
+		if (rc)
+			pr_err("%s: pm8058_pwm_config_led(ch=%d): rc=%d\n",
+			       __func__, ch, rc);
+	}
+
+	return rc;
+}
+
+static int pm8058_pwm_enable(struct pwm_device *pwm, int ch, int on)
+{
+	int	rc;
+
+	switch (ch) {
+	case 7:
+		rc = pm8058_pwm_set_dtest(pwm, on);
+		if (rc)
+			pr_err("%s: pwm_set_dtest(%d): rc=%d\n",
+			       __func__, on, rc);
+		break;
+	default:
+		rc = -EINVAL;
+		break;
+	}
+	return rc;
+}
 static struct pm8058_pwm_pdata pm8058_pwm_data = {
 	.config         = pm8058_pwm_config,
 	.enable         = pm8058_pwm_enable,
 };
+
 
 static struct pm8xxx_irq_platform_data pm8xxx_irq_pdata = {
 	.irq_base		= PMIC8058_IRQ_BASE,
@@ -1224,7 +1312,7 @@ static int __init pm8058_i2c_init(void)
 		pr_err("%s: gpio_tlmm_config (gpio=%d) failed\n",
 		       __func__, PMIC_GPIO_INT);
 
-	set_pm8058_sub_devices();
+	//set_pm8058_sub_devices();
 
 	i2c_register_board_info(6 /* I2C_SSBI ID */ , pm8058_boardinfo,
 				ARRAY_SIZE(pm8058_boardinfo));
@@ -3914,12 +4002,12 @@ static struct msm_ssbi_platform_data msm_i2c_ssbi7_pdata = {
 	.rsl_id = "D:CODEC_SSBI",
 	.controller_type = MSM_SBI_CTRL_SSBI,
 };
-
+/*
 static struct msm_acpu_clock_platform_data msm7x30_clock_data = {
 	.acpu_switch_time_us = 50,
 	.vdd_switch_time_us = 62,
 };
-
+*/
 static void __init msm7x30_init_irq(void)
 {
 	msm_init_irq();
@@ -4112,7 +4200,7 @@ static int cdcc_pm_gpio_config(unsigned int enable)
 	 * high if disabling power
 	 */
 	pmic_gpio_25.output_value = !enable;
-	rc = pm8058_gpio_config(PMIC_GPIO_SD_POWER - 1, &pmic_gpio_25);
+	rc = pm8xxx_gpio_config(PMIC_GPIO_SD_POWER - 1, &pmic_gpio_25);
 	if (rc)
 		pr_err("%s: Config PMIC_GPIO_SD_POWER failed\n", __func__);
 #endif
@@ -4435,6 +4523,7 @@ static void __init msm7x30_init(void)
 #if defined(CONFIG_FB_MSM_MDDI_AUO_HVGA_LCD)
 	semc_mogami_lcd_power_on(2, 21, 51);
 #endif
+pm8058_gpios_init();
 }
 
 static unsigned pmem_sf_size = MSM_PMEM_SF_SIZE;
@@ -4522,16 +4611,16 @@ static void __init msm7x30_fixup(struct machine_desc *desc, struct tag *tags,
 
 	mi->nr_banks = 3;
 	mi->bank[0].start = MSM_BANK0_BASE;
-	mi->bank[0].node = PHYS_TO_NID(MSM_BANK0_BASE);
+	//mi->bank[0].node = PHYS_TO_NID(MSM_BANK0_BASE);
 	mi->bank[0].size = MSM_BANK0_SIZE;
 
 	mi->bank[1].start = MSM_BANK1_BASE;
-	mi->bank[1].node = PHYS_TO_NID(mi->bank[1].start);
+	//mi->bank[1].node = PHYS_TO_NID(mi->bank[1].start);
 	mi->bank[1].size = MSM_BANK1_SIZE;
 
 	mi->bank[2].start = MSM_BANK2_BASE;
 	mi->bank[2].size = MSM_BANK2_SIZE;
-	mi->bank[2].node = PHYS_TO_NID(mi->bank[2].start);
+	//mi->bank[2].node = PHYS_TO_NID(mi->bank[2].start);
 }
 
 MACHINE_START(SEMC_MOGAMI, "mogami")
