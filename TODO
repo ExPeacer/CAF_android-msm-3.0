@@ -1,5 +1,6 @@
 - Board related changes
 - Touch drivers
 - Camera fixes
+- Add Kconfig for video drivers (important)
 some more...
 
