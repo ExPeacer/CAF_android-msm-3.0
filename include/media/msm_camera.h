@@ -221,6 +221,7 @@ struct msm_mctl_post_proc_cmd {
 #define MAX_ACTUATOR_INIT_SET 12
 #define MAX_ACTUATOR_TYPE_SIZE 32
 #define MAX_ACTUATOR_REG_TBL_SIZE 8
+#define MAX_MODULE_NAME 8 /* extension */
 
 
 #define MSM_MAX_CAMERA_CONFIGS 2
@@ -490,6 +491,7 @@ struct camera_enable_cmd {
 #define MSM_PMEM_MAINIMG_VPE    18
 #define MSM_PMEM_THUMBNAIL_VPE  19
 #define MSM_PMEM_MAX            20
+#define MSM_PMEM_RGB_STREAM		21 /* extension */
 
 #define STAT_AEAW			0
 #define STAT_AEC			1
@@ -583,6 +585,7 @@ struct msm_mem_map_info {
 #define MSM_PLANE_UV		1
 
 struct msm_frame {
+	uint16_t fmt; /* extension */
 	struct timespec ts;
 	int path;
 	int type;
@@ -796,7 +799,13 @@ struct msm_snapshot_pp_status {
 #define CFG_SET_AUTOFLASH             41
 #define CFG_SET_EXPOSURE_COMPENSATION 42
 #define CFG_SET_ISO                   43
-#define CFG_MAX			44
+#define CFG_GPIO_CTRL			44
+#define CFG_I2C_WRITE			45
+#define CFG_I2C_READ			46
+#define CFG_CSI_CTRL			47
+#define CFG_ROM_READ			48
+/* extension end */
+#define CFG_MAX 				49
 
 
 #define MOVE_NEAR	0
@@ -998,11 +1007,122 @@ struct fps_cfg {
 	uint16_t fps_div;
 	uint32_t pict_fps_div;
 };
+/* extension begin */
+struct camera_dimension_t
+{
+	uint16_t picture_width;
+	uint16_t picture_height;
+	uint16_t display_width;
+	uint16_t display_height;
+	uint16_t thumbnail_width;
+	uint16_t thumbnail_height;
+};
+
+struct camera_preview_dimension_t
+{
+	uint16_t sensor_width;
+	uint16_t sensor_height;
+};
+
+enum set_test_pattern_t {
+   TEST_PATTERN_ON,
+   TEST_PATTERN_OFF
+};
+
+enum camera_af_status {
+	SENSOR_AF_IN_PROGRESS,
+	SENSOR_AF_SUCCESS,
+	SENSOR_AF_FAILED
+};
+
+struct cam_ctrl_rational_t
+{
+  uint32_t  numerator;
+  uint32_t  denominator;
+} ;
+/* extension end */
+
+struct cam_ctrl_exif_params_t {
+	uint32_t shutter_speed; /* in us */
+	uint16_t iso_speed_index;
+	uint16_t camera_revision;
+	uint8_t  flash_fired; /* extension */
+};
+
+/* extension begin */
+enum camera_scene
+{
+	SENSOR_SCENE_AUTO,
+	SENSOR_SCENE_MACRO,
+	SENSOR_SCENE_TWILIGHT,
+	SENSOR_SCENE_SPORTS,
+	SENSOR_SCENE_BEACH,
+	SENSOR_SCENE_SNOW,
+	SENSOR_SCENE_LANDSCAPE,
+	SENSOR_SCENE_PORTRAIT,
+	SENSOR_SCENE_TWILIGHT_PORTRAIT,
+	SENSOR_SCENE_DOCUMENT,
+};
+
+enum camera_focus_mode {
+	SENSOR_FOCUS_MODE_AUTO,
+	SENSOR_FOCUS_MODE_MACRO,
+	SENSOR_FOCUS_MODE_CONTINUOUS,
+	SENSOR_FOCUS_MODE_FIXED
+};
+
 struct wb_info_cfg {
 	uint16_t red_gain;
 	uint16_t green_gain;
 	uint16_t blue_gain;
 };
+
+enum sensor_gpio_ctrl_type {
+	SENSOR_GPIO_CTRL_RESET,
+	SENSOR_GPIO_CTRL_STANBY,
+};
+
+struct sensor_gpio_ctrl {
+	enum sensor_gpio_ctrl_type gpio;
+	int value;
+};
+
+enum sensor_i2c_addr_type {
+	SENSOR_I2C_ADDR_0BYTE = 0,
+	SENSOR_I2C_ADDR_1BYTE = 1,
+	SENSOR_I2C_ADDR_2BYTE = 2,
+	SENSOR_I2C_ADDR_4BYTE = 4,
+};
+
+struct sensor_i2c_io {
+	uint8_t slave_addr;
+	uint32_t address;
+	enum sensor_i2c_addr_type address_type;
+	uint8_t length;
+	uint8_t __user *data;
+};
+
+enum sensor_csi_data_format {
+	SENSOR_CSI_DATA_8BIT,
+	SENSOR_CSI_DATA_10BIT,
+	SENSOR_CSI_DATA_12BIT,
+};
+
+struct sensor_csi_params {
+	enum sensor_csi_data_format data_format;
+	uint8_t lane_cnt;
+	uint8_t lane_assign;
+	uint8_t settle_cnt;
+	uint8_t dpcm_scheme;
+};
+
+struct sensor_rom_in {
+	uint16_t address;
+	uint16_t length;
+	uint8_t __user *data;
+};
+/* extension end */
+
 struct sensor_3d_exp_cfg {
 	uint16_t gain;
 	uint32_t line;
@@ -1106,6 +1226,11 @@ struct sensor_cfg_data {
 
 	union {
 		int8_t effect;
+		/* extension begin */
+		int8_t ev;
+		int8_t exp_mode;
+		uint16_t iso_mode;
+		/* extension end */
 		uint8_t lens_shading;
 		uint16_t prevl_pf;
 		uint16_t prevp_pl;
@@ -1136,6 +1261,20 @@ struct sensor_cfg_data {
 		struct cord aec_cord;
 		int is_autoflash;
 		struct mirror_flip mirror_flip;
+		/* extension begin */
+		struct camera_dimension_t dimension;
+		enum set_test_pattern_t set_test_pattern;
+		enum camera_af_status af_status;
+		struct cam_ctrl_exif_params_t exif;
+		enum camera_scene scene;
+		struct camera_preview_dimension_t preview_dimension;
+		uint8_t flashled;
+		enum camera_focus_mode focus_mode;
+		struct sensor_gpio_ctrl gpio_ctrl;
+		struct sensor_i2c_io i2c_io;
+		struct sensor_csi_params csi_ctrl;
+		struct sensor_rom_in rom_in;
+		/* extension end */
 	} cfg;
 };
 
@@ -1382,6 +1521,7 @@ struct msm_camsensor_info {
 	uint8_t strobe_flash_enabled;
 	uint8_t actuator_enabled;
 	int8_t total_steps;
+	char module_name[MAX_MODULE_NAME]; /* extension */
 	uint8_t support_3d;
 	enum flash_type flashtype;
 	enum sensor_type_t sensor_type;

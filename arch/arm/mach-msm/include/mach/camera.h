@@ -43,7 +43,7 @@
 #define NUM_AUTOFOCUS_MULTI_WINDOW_GRIDS 16
 #define NUM_STAT_OUTPUT_BUFFERS      3
 #define NUM_AF_STAT_OUTPUT_BUFFERS      3
-#define max_control_command_size 512
+#define max_control_command_size 150
 #define CROP_LEN 36
 
 enum vfe_mode_of_operation{
@@ -61,7 +61,7 @@ enum msm_queue {
 	MSM_CAM_Q_VFE_EVT,  /* adsp event */
 	MSM_CAM_Q_VFE_MSG,  /* adsp message */
 	MSM_CAM_Q_V4L2_REQ, /* v4l2 request */
-	MSM_CAM_Q_VPE_MSG,  /* vpe message */
+	MSM_CAM_Q_VPE_MSG,  /* adsp message */
 	MSM_CAM_Q_PP_MSG,  /* pp message */
 };
 
@@ -97,7 +97,12 @@ enum vfe_resp_msg {
 };
 
 enum vpe_resp_msg {
+	VPE_EVENT,
 	VPE_MSG_GENERAL,
+	VPE_MSG_SNAPSHOT,
+	VPE_MSG_OUTPUT_P,   /* preview (continuous mode ) */
+	VPE_MSG_OUTPUT_T,   /* thumbnail (snapshot mode )*/
+	VPE_MSG_OUTPUT_S,   /* main image (snapshot mode )*/
 	VPE_MSG_OUTPUT_V,   /* video   (continuous mode ) */
 	VPE_MSG_OUTPUT_ST_L,
 	VPE_MSG_OUTPUT_ST_R,
@@ -637,6 +642,8 @@ struct msm_cam_clk_info {
 
 int msm_camio_enable(struct platform_device *dev);
 int msm_camio_vpe_clk_enable(uint32_t);
+int msm_camio_jpeg_clk_enable(void);
+int msm_camio_jpeg_clk_disable(void);
 int msm_camio_vpe_clk_disable(void);
 
 void msm_camio_mode_config(enum msm_camera_i2c_mux_mode mode);
@@ -646,6 +653,10 @@ int  msm_camio_clk_config(uint32_t freq);
 void msm_camio_clk_rate_set(int rate);
 int msm_camio_vfe_clk_rate_set(int rate);
 void msm_camio_clk_rate_set_2(struct clk *clk, int rate);
+void msm_camio_clk_set_min_rate(struct clk *clk, int rate);
+#if defined(CONFIG_SEMC_CAMERA_MODULE) || defined(CONFIG_SEMC_SUB_CAMERA_MODULE)
+void msm_camio_cam_mclk_enable(int rate);
+#endif
 void msm_camio_clk_axi_rate_set(int rate);
 void msm_disable_io_gpio_clk(struct platform_device *);
 
