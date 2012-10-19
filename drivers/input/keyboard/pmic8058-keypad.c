@@ -25,9 +25,9 @@
 #include <linux/mfd/pmic8058.h>
 #include <linux/delay.h>
 #include <linux/mutex.h>
+#include <linux/slab.h>
 #include <linux/pm.h>
 #include <linux/pm_runtime.h>
-#include <linux/slab.h>
 
 #include <linux/input/pmic8058-keypad.h>
 
@@ -727,8 +727,7 @@ static int __devinit pmic8058_kp_probe(struct platform_device *pdev)
 	kp->keycodes	= keycodes;
 	kp->pm_chip	= pm_chip;
 
-	if (pm8058_rev(pm_chip) == PM_8058_REV_1p0
-		|| pm8058_rev(pm_chip) == PM_8058_REV_2p1)
+	if (pm8058_rev(pm_chip) == PM_8058_REV_1p0)
 		kp->flags |= KEYF_FIX_LAST_ROW;
 
 	kp->input = input_allocate_device();
