@@ -1,6 +1,3 @@
-- Board related changes
-- Touch drivers
-- Camera fixes
-- Add Kconfig for video drivers (important)
-some more...
+- Board related changes /only if needed/
+- Acpuclock, and clock* rewrite to fit, to our SoC.
 
