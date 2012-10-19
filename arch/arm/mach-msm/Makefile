@@ -2,7 +2,7 @@ obj-y += io.o dma.o memory.o
 ifndef CONFIG_ARM_ARCH_TIMER
 obj-y += timer.o
 endif
-obj-y += clock.o clock-voter.o clock-dummy.o
+obj-y += clock.o clock-voter.o clock-dummy.o clock-local.o clock-pll.o
 obj-y += modem_notifier.o subsystem_map.o
 obj-$(CONFIG_CPU_FREQ_MSM) += cpufreq.o
 obj-$(CONFIG_DEBUG_FS) += nohlt.o clock-debug.o
@@ -290,7 +290,7 @@ obj-$(CONFIG_ARCH_MSMCOPPER) += clock-local2.o clock-pll.o clock-copper.o
 obj-$(CONFIG_ARCH_MSMCOPPER) += gdsc.o
 obj-$(CONFIG_ARCH_MSM9625) += board-9625.o board-9625-gpiomux.o
 
-obj-$(CONFIG_MACH_SEMC_MOGAMI) += board-semc_mogami.o board-semc_mogami-rfkill.o keypad-mogami_cdb.o leds-mogami_cdb.o gpio-mogami_cdb.o charger-mogami_cdb.o board-semc_mogami-wifi.o
+obj-$(CONFIG_MACH_SEMC_MOGAMI) += board-semc_mogami.o board-semc_mogami-rfkill.o leds-mogami_cdb.o gpio-mogami_cdb.o charger-mogami_cdb.o board-semc_mogami-wifi.o
 obj-$(CONFIG_MACH_SEMC_ANZU) += board-semc_mogami.o board-semc_mogami-rfkill.o keypad-anzu.o leds-anzu.o gpio-anzu.o charger-anzu.o board-semc_mogami-wifi.o
 obj-$(CONFIG_MACH_SEMC_HALLON) += board-semc_mogami.o board-semc_mogami-rfkill.o keypad-hallon.o leds-hallon.o gpio-hallon.o charger-hallon.o fpc_test-hallon.o board-semc_mogami-wifi.o
 obj-$(CONFIG_MACH_SEMC_IYOKAN) += board-semc_mogami.o board-semc_mogami-rfkill.o keypad-iyokan.o leds-iyokan.o gpio-iyokan.o charger-iyokan.o board-semc_mogami-wifi.o touch-iyokan.o

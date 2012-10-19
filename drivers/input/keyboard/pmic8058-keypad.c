@@ -121,6 +121,13 @@ struct pmic8058_kp {
 	u8			ctrl_reg;
 };
 
+int pm8058_rev(struct pm8058_chip *pm_chip)
+{
+	if (pm_chip == NULL)
+		return -EINVAL;
+	return pm_chip.revision;
+}
+
 static int pmic8058_kp_write_u8(struct pmic8058_kp *kp,
 				 u8 data, u16 reg)
 {

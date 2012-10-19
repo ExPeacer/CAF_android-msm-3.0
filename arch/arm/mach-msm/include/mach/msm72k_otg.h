@@ -174,6 +174,7 @@ static inline int can_phy_power_collapse(struct msm_otg *dev)
 }
 
 /* When detected VBUS drop, it is notified from a charger. */
+#ifdef CONFIG_USB_MSM_OTG_72K
 void msm_otg_notify_vbus_drop(void);
-
+#endif
 #endif

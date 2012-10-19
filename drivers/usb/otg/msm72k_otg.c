@@ -1657,6 +1657,16 @@ reset_link:
 	}
 }
 
+void msm_otg_notify_vbus_drop(void)
+{
+	struct msm_otg *dev = the_msm_otg;
+
+	set_bit(VBUS_DROP_DET, &dev->inputs);
+	wake_lock(&dev->wlock);
+	queue_work(dev->wq, &dev->sm_work);
+	return;
+}
+
 static void msm_otg_sm_work(struct work_struct *w)
 {
 	struct msm_otg	*dev = container_of(w, struct msm_otg, sm_work);
