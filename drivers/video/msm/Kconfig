@@ -83,16 +83,6 @@ config FB_MSM_MDP40
 	  Support for MSM MDP HW revision 4.0
 	  Say Y here if this is msm7x30 variant platform.
 
-config FB_MSM_MDSS
-	bool "MDSS HW"
-	---help---
-	The Mobile Display Sub System (MDSS) driver supports devices which
-	contain MDSS hardware block.
-
-	The MDSS driver implements frame buffer interface to provide access to
-	the display hardware and provide a way for users to display graphics
-	on connected display panels.
-
 config FB_MSM_MDP_NONE
 	bool "MDP HW None"
 	---help---
@@ -306,11 +296,6 @@ config FB_MSM_LVDS_CHIMEI_WXGA
 	select FB_MSM_LVDS
 	default n
 
-config FB_MSM_LVDS_FRC_FHD
-	bool
-	select FB_MSM_LVDS
-	default n
-
 config FB_MSM_MIPI_TOSHIBA_VIDEO_WVGA_PT
 	bool
 	select FB_MSM_MIPI_DSI_TOSHIBA
@@ -403,15 +388,6 @@ config FB_MSM_MIPI_SIMULATOR_VIDEO
 	bool
 	select FB_MSM_MIPI_DSI_SIMULATOR
 	default n
-
-config FB_MSM_NO_MDP_PIPE_CTRL
-	depends on FB_MSM_OVERLAY
-	bool "Do not use mdp_pipe_ctrl"
-	---help---
-	  Saying 'Y' here obsoletes the mdp_pipe_ctrl function,
-	  which was used to control mdp-related clocks. MDP4 vsync-driven
-	  screen updates will use a different clock control mechanism if
-	  this is selected.
 
 config FB_MSM_OVERLAY0_WRITEBACK
 	depends on FB_MSM_OVERLAY
@@ -513,15 +489,6 @@ config FB_MSM_LVDS_CHIMEI_WXGA_PANEL
         ---help---
           Support for LVDS Chimei WXGA(1366x768) panel
 
-config FB_MSM_LVDS_FRC_FHD_PANEL
-	bool "LVDS FRC FHD Panel"
-	select FB_MSM_LVDS_FRC_FHD
-	---help---
-	  Support for LVDS Frc FHD(1920x1080) panel
-	  FRC(Frame Rate Converter) uses LVDS as input
-	  interface. It is treated as a HDMI panel with
-	  1920x1080 resolution.
-
 config FB_MSM_TRY_MDDI_CATCH_LCDC_PRISM
 	depends on FB_MSM_LCDC_HW
 	bool "MDDI Panel Auto Detect + LCDC Prism WVGA"
@@ -600,7 +567,6 @@ config FB_MSM_LCDC_MIPI_PANEL_AUTO_DETECT
 config FB_MSM_LVDS_MIPI_PANEL_DETECT
 	bool "LVDS + MIPI Panel Auto Detect"
 	select FB_MSM_LVDS_CHIMEI_WXGA
-	select FB_MSM_LVDS_FRC_FHD
 	select FB_MSM_MIPI_TOSHIBA_VIDEO_WVGA_PT
 	select FB_MSM_MIPI_TOSHIBA_VIDEO_WSVGA_PT
 	select FB_MSM_MIPI_TOSHIBA_VIDEO_WUXGA
@@ -954,5 +920,4 @@ config FB_MSM_EBI2_PANEL_DETECT
 	default n
 	---help---
 	  Support for EBI2 panel auto detect
-
 endif
