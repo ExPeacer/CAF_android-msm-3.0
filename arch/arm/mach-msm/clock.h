@@ -24,6 +24,7 @@
 #include <linux/mutex.h>
 
 #include <mach/clk.h>
+#define MAX_NR_CLKS	300
 
 #define CLKFLAG_INVERT			0x00000001
 #define CLKFLAG_NOINVERT		0x00000002
@@ -199,4 +200,3 @@ extern struct clk dummy_clk;
 #define CLK_LOOKUP(con, c, dev) { .con_id = con, .clk = &c, .dev_id = dev }
 
 #endif
-

@@ -69,6 +69,7 @@
 #define MI2S_NS_REG		REG(0x02E0)
 #define MI2S_RX_NS_REG		REG(0x0070)
 #define MI2S_TX_NS_REG		REG(0x0078)
+#define MIDI_NS_REG		REG(0x02D0)
 #define PLL_ENA_REG		REG(0x0264)
 #define PMDH_NS_REG		REG(0x008C)
 #define SDAC_NS_REG		REG(0x009C)

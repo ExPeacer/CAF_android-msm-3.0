@@ -30,7 +30,7 @@ int acpuclk_set_rate(int cpu, unsigned long rate, enum setrate_reason reason)
 
 	return acpuclk_data->set_rate(cpu, rate, reason);
 }
-
+/*
 uint32_t acpuclk_get_switch_time(void)
 {
 	return acpuclk_data->switch_time_us;
@@ -51,7 +51,7 @@ unsigned long acpuclk_wait_for_irq(void)
 			 SETRATE_SWFI);
 	return rate;
 }
-
+*/
 void __init acpuclk_register(struct acpuclk_data *data)
 {
 	acpuclk_data = data;
